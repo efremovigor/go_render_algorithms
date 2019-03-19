@@ -20,7 +20,7 @@ type Circle struct {
 	position image.Point
 }
 
-func RectvsRect(a Rect, b Rect) bool {
+func RectsCollision(a Rect, b Rect) bool {
 	if a.max.X < b.min.X || a.min.X > b.max.X {
 		return false
 	}
@@ -31,8 +31,8 @@ func RectvsRect(a Rect, b Rect) bool {
 	return true
 }
 
-func CirclevsCircleOptimized(a Circle, b Circle) bool {
-	r := a.radius + b.radius
+func CirclesCollision(a Circle, b Circle) bool {
+	r := a.radius + b.radius + 1
 	r *= r
 	pow1 := math.Pow(float64(a.position.X-b.position.X), 2)
 	pow2 := math.Pow(float64(a.position.Y-b.position.Y), 2)
@@ -44,11 +44,11 @@ func main() {
 	img := image.NewRGBA(rect)
 	fillRect(img, rect, colornames.White)
 
-	circle1 := Circle{position: image.Point{X: 5, Y: 20}, radius: 5}
+	circle1 := Circle{position: image.Point{X: 5, Y: 20}, radius: 15}
 	circle2 := Circle{position: image.Point{X: 20, Y: 5}, radius: 5}
 	drawCircle(circle1, img, colornames.Green)
 	drawCircle(circle2, img, colornames.Red)
-	fmt.Println(CirclevsCircleOptimized(circle1, circle2))
+	fmt.Println(CirclesCollision(circle1, circle2))
 	//img = rotate90(img)
 	f, _ := os.Create("image.png")
 	png.Encode(f, img)
