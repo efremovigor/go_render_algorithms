@@ -10,16 +10,46 @@ import (
 	"os"
 )
 
+type Rect struct {
+	min image.Point
+	max image.Point
+}
+
+type Circle struct {
+	radius   int
+	position image.Point
+}
+
+func RectvsRect(a Rect, b Rect) bool {
+	if a.max.X < b.min.X || a.min.X > b.max.X {
+		return false
+	}
+	if a.max.Y < b.min.Y || a.min.Y > b.max.Y {
+		return false
+	}
+
+	return true
+}
+
+func CirclevsCircleOptimized(a Circle, b Circle) bool {
+	r := a.radius + b.radius
+	r *= r
+	pow1 := math.Pow(float64(a.position.X-b.position.X), 2)
+	pow2 := math.Pow(float64(a.position.Y-b.position.Y), 2)
+	return r < (int(pow1 + pow2))
+}
+
 func main() {
 	rect := image.Rect(0, 0, 100, 100)
 	img := image.NewRGBA(rect)
-	fillRect(img, rect, colornames.Black)
-	line(13, 20, 80, 40, img, colornames.White)
-	line(20, 13, 40, 80, img, colornames.Red)
-	line(80, 40, 13, 20, img, colornames.Red)
+	fillRect(img, rect, colornames.White)
 
-	img = rotate90(img)
-
+	circle1 := Circle{position: image.Point{X: 5, Y: 20}, radius: 5}
+	circle2 := Circle{position: image.Point{X: 20, Y: 5}, radius: 5}
+	drawCircle(circle1, img, colornames.Green)
+	drawCircle(circle2, img, colornames.Red)
+	fmt.Println(CirclevsCircleOptimized(circle1, circle2))
+	//img = rotate90(img)
 	f, _ := os.Create("image.png")
 	png.Encode(f, img)
 }
@@ -38,8 +68,8 @@ func line(x0 float64, y0 float64, x1 float64, y1 float64, img *image.RGBA, color
 
 	dx := x1 - x0
 	dy := y1 - y0
-	derror2 := math.Abs(dy)*2
-	error2 := 0.0
+	errorDraw := math.Abs(dy) * 2
+	errorDraw2 := 0.0
 	y := y0
 
 	for x := x0; x <= x1; x++ {
@@ -48,15 +78,15 @@ func line(x0 float64, y0 float64, x1 float64, y1 float64, img *image.RGBA, color
 		} else {
 			img.Set(int(x), int(y), color)
 		}
-		error2 += derror2
+		errorDraw2 += errorDraw
 
-		if error2 > dx {
-			if y1>y0 {
+		if errorDraw2 > dx {
+			if y1 > y0 {
 				y += 1
 			} else {
 				y -= 1
 			}
-			error2 -= dx*2
+			errorDraw2 -= dx * 2
 		}
 	}
 }
@@ -100,4 +130,41 @@ func rotate270(img *image.RGBA) (new *image.RGBA) {
 		}
 	}
 	return
+}
+func drawRect(min image.Point, max image.Point, img *image.RGBA) (new *image.RGBA) {
+	for x := min.X; x <= max.X; x++ {
+		for y := min.Y; y <= max.Y; y++ {
+			img.Set(x, y, colornames.Green)
+		}
+	}
+	return
+}
+
+func drawCircle(circle Circle, img *image.RGBA, color color.Color) {
+	x := 0
+	y := circle.radius
+	delta := 1 - 2*circle.radius
+	errorDraw := 0
+	for y >= 0 {
+		img.Set(circle.position.X+x, circle.position.Y+y, color)
+		img.Set(circle.position.X+x, circle.position.Y-y, color)
+		img.Set(circle.position.X-x, circle.position.Y+y, color)
+		img.Set(circle.position.X-x, circle.position.Y-y, color)
+		errorDraw = 2*(delta+y) - 1
+		if (delta < 0) && (errorDraw <= 0) {
+			x += 1
+			delta += 2*x + 1
+			continue
+		}
+
+		if delta > 0 && errorDraw > 0 {
+			y -= 1
+			delta -= 2*y + 1
+			continue
+		}
+		x += 1
+		delta += 2 * (x - y)
+		y -= 1
+	}
+
 }
